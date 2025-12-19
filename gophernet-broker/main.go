@@ -10,9 +10,9 @@ func main() {
 	broker = NewBroker()
 
 	http.HandleFunc("/health", HealthHandler)
-	http.HandleFunc("/publish", PublishHandler)
-	http.HandleFunc("/events", GetEventsHandler)
+	http.HandleFunc("/publish", PublishHandler(broker))
+	http.HandleFunc("/events", EventsHandler(broker))
 
-	fmt.Println("GopherNet Broker running on :3000")
-	http.ListenAndServe(":3000", nil)
+	fmt.Println("GopherNet Broker running on : 3000")
+	http.ListenAndServe(": 3000", nil)
 }
