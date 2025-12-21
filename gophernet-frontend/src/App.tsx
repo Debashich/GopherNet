@@ -41,7 +41,7 @@ export default function App() {
       <main>
         <Hero event={events[0]} />
 
-        <EventSection title="Trending Now" events={events} />
+        <EventSection title="Live Events" events={events} />
         <EventSection title="System Events" events={grouped.System || []} />
         <EventSection title="Database Events" events={grouped.Database || []} />
         <EventSection title="Performance Events" events={grouped.Performance || []} />
