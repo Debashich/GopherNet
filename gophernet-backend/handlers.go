@@ -1,12 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"encoding/json"
 	"net/http"
+	"github.com/gorilla/websocket"
 )
 
-var broker *Broker
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
@@ -29,17 +33,6 @@ func PublishHandler(b *Broker) http.HandlerFunc {
 		b.AddEvent(e)
 
 
-		subscribers := b.GetSubscribers(e.Topic)
-		fmt.Printf(
-			"Notifying %d subscriber(s) for topic %s\n",
-			len(subscribers),
-			e.Topic,
-		)
-
-
-
-
-
 		w.WriteHeader(http.StatusCreated)
 	}
 }
@@ -55,32 +48,30 @@ func EventsHandler(b *Broker) http.HandlerFunc {
 
 //SUBSCRIPTIONS HANDLER
 
-type SubscribeRequest struct {
-	Topic  string `json:"topic"`
-	UserID string `json:"user_id"`
-}
-
 func SubscribeHandler(b *Broker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+
+
+		topic := r.URL.Query().Get("topic")
+		if topic == "" {
+			http.Error(w, "missing topic parameter", http.StatusBadRequest)
 			return
 		}
 
-		var req SubscribeRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "invalid JSON", http.StatusBadRequest)
+
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
 			return
 		}
 
-		if req.Topic == "" || req.UserID == "" {
-			http.Error(w, "missing topic or user_id", http.StatusBadRequest)
-			return
+		b.AddSubscription(conn, topic)
+		defer b.RemoveClient(conn)
+		
+		for {
+			if _, _, err := conn.ReadMessage(); err != nil {
+				break
+			}
 		}
-
-		b.Subscribe(req.Topic, req.UserID)
-
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("subscribed successfully"))
 	}
 }

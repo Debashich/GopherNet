@@ -3,6 +3,7 @@ package main
 import (
 	"sync"
 	"time"
+	"github.com/gorilla/websocket"
 )
 
 type Event struct {
@@ -14,14 +15,14 @@ type Event struct {
 type Broker struct {
 	mu sync.RWMutex
 	events []Event
-	subscriptions map[string][]string
+	subscriptions map[*websocket.Conn][]string
 }
 
 
 func NewBroker() *Broker {
 	return &Broker{
 		events: make([]Event, 0),
-		subscriptions: make(map[string][]string),
+		subscriptions: make(map[*websocket.Conn][]string),
 	}
 }
 
@@ -31,9 +32,18 @@ func NewBroker() *Broker {
 func (b *Broker) AddEvent(e Event) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-
+	
 	e.Timestamp = time.Now()
 	b.events = append(b.events, e)
+
+	for conn, topics := range b.subscriptions {
+		for _, topic := range topics {
+			if topic == e.Topic {
+				conn.WriteJSON(e)
+				break
+			}
+		}
+	}
 }
 
 func (b *Broker) GetEvents() []Event {
@@ -45,14 +55,14 @@ func (b *Broker) GetEvents() []Event {
 
 // SUBSCRIPTIONS
 
-func (b *Broker) Subscribe(topic string, userID string) {
+func (b *Broker) AddSubscription(conn *websocket.Conn, topic string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.subscriptions[topic] = append(b.subscriptions[topic], userID)
+	b.subscriptions[conn] = append(b.subscriptions[conn], topic)
 }
 
-func (b *Broker) GetSubscribers(topic string) []string {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-	return b.subscriptions[topic]
+func (b *Broker) RemoveClient(conn *websocket.Conn) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	delete(b.subscriptions, conn)
 }

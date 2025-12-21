@@ -8,7 +8,7 @@ import (
 
 func main() {
 
-	broker = NewBroker()
+	broker := NewBroker()
 
 	http.HandleFunc("/health", HealthHandler)
 	http.HandleFunc("/publish", PublishHandler(broker))
@@ -18,5 +18,5 @@ func main() {
 
 	
 	fmt.Println("GopherNet Broker running on : 3000")
-	http.ListenAndServe(": 3000", nil)
+	http.ListenAndServe(":3000", nil)
 }
