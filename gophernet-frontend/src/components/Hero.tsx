@@ -40,9 +40,9 @@ export default function Hero({ event }: HeroProps) {
               </button>
             </div>
 
-            <p className="text-xs font-mono text-slate-500">
+            {/* <p className="text-xs font-mono text-slate-500">
               {new Date(event.timestamp).toLocaleString()}
-            </p>
+            </p> */}
           </div>
 
           {/* RIGHT TERMINAL */}
@@ -73,8 +73,8 @@ curl -X POST http://localhost:3000/publish`;
           <span className="text-green-400 text-sm font-mono">gophernet@backend:~</span>
           <button
             onClick={handleCopy}
-            className="text-slate-400 hover:text-white transition-colors text-xs font-medium flex items-center gap-1.5 px-2 py-1 rounded hover:bg-slate-700"
-            title="Copy commands"
+            className="text-slate-400 hover:text-white transition-colors text-xs font-medium flex items-center gap-1.5 px-2 py-1 rounded hover:bg-slate-1000"
+            // title="Copy commands"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 25 25">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -89,7 +89,7 @@ curl -X POST http://localhost:3000/publish`;
           <p><span className="text-cyan-400">$</span> go run main.go</p>
           <p><span className="text-cyan-400">$</span> curl -X POST http://localhost:3000/publish</p>
           <p className="pt-2 text-green-400">
-            ✓ GopherNet Broker running on :3000
+            ✓ GopherNet Backend running on :3000
           </p>
         </div>
 
