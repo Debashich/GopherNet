@@ -8,13 +8,19 @@ import (
 
 func main() {
 
-	broker := NewBroker()
+
+	store := NewMemoryStore()
+	broker := NewBroker(store)
 
 	http.HandleFunc("/health", HealthHandler)
 
 	http.HandleFunc("/login", LoginHandler)
 
-	http.HandleFunc("/publish", PublishHandler(broker))
+	http.Handle("/publish", 
+	AuthMiddleware("admin", "publisher")(PublishHandler(broker)))
+
+
+
 	http.HandleFunc("/events", EventsHandler(broker))
 	http.HandleFunc("/subscribe", SubscribeHandler(broker))
 

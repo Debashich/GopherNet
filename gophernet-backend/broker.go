@@ -14,14 +14,14 @@ type Event struct {
 
 type Broker struct {
 	mu sync.RWMutex
-	events []Event
+	store Store
 	subscriptions map[*websocket.Conn][]string
 }
 
 
-func NewBroker() *Broker {
+func NewBroker(store Store) *Broker {
 	return &Broker{
-		events: make([]Event, 0),
+		store: store,
 		subscriptions: make(map[*websocket.Conn][]string),
 	}
 }
@@ -33,8 +33,11 @@ func (b *Broker) AddEvent(e Event) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	
+
+
+	_=b.store.Save(e)
 	e.Timestamp = time.Now()
-	b.events = append(b.events, e)
+	
 
 	for conn, topics := range b.subscriptions {
 		for _, topic := range topics {
@@ -50,7 +53,8 @@ func (b *Broker) GetEvents() []Event {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
-	return b.events
+	events, _ := b.store.ListByTopic("")
+	return events
 }
 
 // SUBSCRIPTIONS
