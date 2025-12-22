@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
+
 	"github.com/gorilla/websocket"
+	
 )
 
 var upgrader = websocket.Upgrader{
@@ -20,11 +23,23 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 func PublishHandler(b *Broker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		role := r.Header.Get("User-Role")
-		if role != "admin" && role != "publisher" {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "missing authorization header", http.StatusUnauthorized)
+			return
+		}
+
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+		claims, err := ParseToken(tokenStr)
+		if err != nil {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+			return
+		}
+		if claims.Role != "admin" {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
+
 
 
 		if r.Method != http.MethodPost {
@@ -39,8 +54,6 @@ func PublishHandler(b *Broker) http.HandlerFunc {
 		}
 
 		b.AddEvent(e)
-
-
 		w.WriteHeader(http.StatusCreated)
 	}
 }
@@ -82,4 +95,39 @@ func SubscribeHandler(b *Broker) http.HandlerFunc {
 			}
 		}
 	}
+}
+
+
+// LOGIN HANDLER
+
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var body struct {
+		Username string `json:"username"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	role := "user"
+	if body.Username == "admin" {
+		role = "admin"
+	}
+
+	token, err := GenerateToken(body.Username, role)
+	if err != nil {
+		http.Error(w, "could not generate token", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"token": token,
+	})
+
 }
