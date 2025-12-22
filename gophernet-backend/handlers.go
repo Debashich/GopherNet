@@ -19,6 +19,14 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 
 func PublishHandler(b *Broker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		role := r.Header.Get("User-Role")
+		if role != "admin" && role != "publisher" {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
