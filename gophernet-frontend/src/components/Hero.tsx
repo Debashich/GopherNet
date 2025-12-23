@@ -9,7 +9,6 @@ interface HeroProps {
 }
 
 export default function Hero({ event }: HeroProps) {
-  if (!event) return null;
 
   return (
     <section className="bg-white">
@@ -19,16 +18,15 @@ export default function Hero({ event }: HeroProps) {
           {/* LEFT CONTENT */}
           <div className="space-y-6 max-w-xl">
             <h1 className="text-5xl font-bold leading-tight text-slate-900">
-              {event.topic}
+              GopherNet
               <br />
               <span className="text-cyan-700">
-                Event Automation
+                LIVE Events
               </span>
             </h1>
 
             <p className="text-lg text-slate-600 leading-relaxed">
-              GopherNet delivers distributed, real-time
-              notifications with reliability and precision.
+              Monitor live events, manage subscriptions, and explore past system activity.
             </p>
 
             <div className="flex gap-4 pt-2">

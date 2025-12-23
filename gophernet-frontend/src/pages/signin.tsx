@@ -55,8 +55,8 @@ export default function SignIn() {
         {/* Demo credentials */}
         <div className="mb-6 rounded-xl border border-teal-200 bg-teal-50 p-5 text-sm text-teal-900 shadow-inner">
           <p className="font-semibold mb-2">Demo Credentials</p>
-          <p>Username: <b>admin</b></p>
-          <p>Password: <b>admin123</b></p>
+          <p>Username: <b>admin || user</b></p>
+          <p>Password: <b>admin123 || user123</b></p>
         </div>
 
         {/* Form */}

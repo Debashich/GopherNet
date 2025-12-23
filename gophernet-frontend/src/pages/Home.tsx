@@ -19,7 +19,7 @@ export default function Home() {
   useEffect(() => {
     setEvents([
       { topic: "System", message: "Broker service healthy and operational", timestamp: new Date() },
-      { topic: "Performance", message: "Latency reduced by 18%", timestamp: new Date() },
+      // { topic: "Performance", message: "Latency reduced by 18%", timestamp: new Date() },
       { topic: "Database", message: "Event persisted successfully", timestamp: new Date() },
       { topic: "System", message: "New subscriber connected", timestamp: new Date() },
     ]);
@@ -43,9 +43,9 @@ export default function Home() {
         <Hero event={events[0]} />
 
         <EventSection title="Live Events" events={events} />
-        <EventSection title="System Events" events={grouped.System || []} />
+        {/* <EventSection title="System Events" events={grouped.System || []} />
         <EventSection title="Database Events" events={grouped.Database || []} />
-        <EventSection title="Performance Events" events={grouped.Performance || []} />
+        <EventSection title="Performance Events" events={grouped.Performance || []} /> */}
       </main>
 
       <Footer />
