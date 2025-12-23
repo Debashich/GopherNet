@@ -66,9 +66,9 @@ export default function Hero({ event }: HeroProps) {
 
 function TerminalCard() {
   const commands = `git clone https://github.com/yourname/gophernet
-cd gophernet-backend
-go run main.go
-curl -X POST http://localhost:3000/publish`;
+                    cd gophernet-backend
+                    go run main.go
+                    curl -X POST http://localhost:3000/publish`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(commands);
