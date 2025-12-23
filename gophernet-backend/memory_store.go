@@ -33,3 +33,16 @@ func (m *MemoryStore) ListByTopic(topic string) ([]Event, error) {
 	}
 	return result, nil
 }
+
+func (m *MemoryStore) ListAfter(topic string, lastID int) ([]Event, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var result []Event
+	for _, e := range m.events {
+		if e.Topic == topic && e.ID > lastID {
+			result = append(result, e)
+		}
+	}	
+	return result, nil
+}

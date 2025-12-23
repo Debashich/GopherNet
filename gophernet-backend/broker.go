@@ -10,12 +10,14 @@ type Event struct {
 	Topic string `json:"topic"`
 	Message string `json:"message"`
 	Timestamp time.Time `json:"timestamp"`
+	ID        int       `json:"id"`
 }
 
 type Broker struct {
 	mu sync.RWMutex
 	store Store
 	subscriptions map[*websocket.Conn][]string
+	nextEventID int
 }
 
 
@@ -23,6 +25,7 @@ func NewBroker(store Store) *Broker {
 	return &Broker{
 		store: store,
 		subscriptions: make(map[*websocket.Conn][]string),
+		nextEventID: 1,
 	}
 }
 
@@ -33,10 +36,9 @@ func (b *Broker) AddEvent(e Event) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	
-
-
-	_=b.store.Save(e)
 	e.Timestamp = time.Now()
+	e.ID = b.nextEventID
+	b.nextEventID++
 	
 
 	for conn, topics := range b.subscriptions {
@@ -54,6 +56,16 @@ func (b *Broker) GetEvents() []Event {
 	defer b.mu.RUnlock()
 
 	events, _ := b.store.ListByTopic("")
+	return events
+}
+
+
+
+func (b *Broker) GetEventsAfter(topic string, lastID int) []Event {
+	events, err := b.store.ListAfter(topic, lastID)
+	if err != nil {
+		return []Event{}
+	}
 	return events
 }
 

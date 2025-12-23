@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+
 	// "strings"
 
 	"github.com/gorilla/websocket"
-	
 )
 
 var upgrader = websocket.Upgrader{
@@ -74,25 +75,30 @@ func SubscribeHandler(b *Broker) http.HandlerFunc {
 
 
 		topic := r.URL.Query().Get("topic")
+		offsetStr := r.URL.Query().Get("offset")
+
+
+
 		if topic == "" {
 			http.Error(w, "missing topic parameter", http.StatusBadRequest)
 			return
 		}
 
-
+		lastID := 0
+		if offsetStr != "" {
+			fmt.Sscanf(offsetStr, "%d", &lastID)
+		}
 
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			return
 		}
 
-
-		events, _ := b.store.ListByTopic(topic)
-		for _, e := range events {
+		replayEvents := b.GetEventsAfter(topic, lastID)
+		for _, e := range replayEvents {
 			conn.WriteJSON(e)
 		}
-
-
+		
 		b.AddSubscription(conn, topic)
 		defer b.RemoveClient(conn)
 		
