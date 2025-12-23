@@ -21,6 +21,8 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
+
+// PUBLISH HANDLER
 func PublishHandler(b *Broker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -40,8 +42,6 @@ func PublishHandler(b *Broker) http.HandlerFunc {
 		// 	http.Error(w, "forbidden", http.StatusForbidden)
 		// 	return
 		// }
-
-
 
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -73,11 +73,8 @@ func EventsHandler(b *Broker) http.HandlerFunc {
 func SubscribeHandler(b *Broker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-
 		topic := r.URL.Query().Get("topic")
 		offsetStr := r.URL.Query().Get("offset")
-
-
 
 		if topic == "" {
 			http.Error(w, "missing topic parameter", http.StatusBadRequest)
@@ -98,10 +95,15 @@ func SubscribeHandler(b *Broker) http.HandlerFunc {
 		for _, e := range replayEvents {
 			conn.WriteJSON(e)
 		}
-		
+
+		pastEvents := b.GetEventsAfter(topic, lastID)
+		for _, e := range pastEvents {
+			conn.WriteJSON(e)
+		}
+
 		b.AddSubscription(conn, topic)
 		defer b.RemoveClient(conn)
-		
+
 		for {
 			if _, _, err := conn.ReadMessage(); err != nil {
 				break
@@ -110,37 +112,36 @@ func SubscribeHandler(b *Broker) http.HandlerFunc {
 	}
 }
 
-
 // LOGIN HANDLER
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+// func LoginHandler(w http.ResponseWriter, r *http.Request) {
+// 	if r.Method != http.MethodPost {
+// 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+// 		return
+// 	}
 
-	var body struct {
-		Username string `json:"username"`
-	}
+// 	var body struct {
+// 		Username string `json:"username"`
+// 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "invalid JSON", http.StatusBadRequest)
-		return
-	}
+// 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+// 		http.Error(w, "invalid JSON", http.StatusBadRequest)
+// 		return
+// 	}
 
-	role := "user"
-	if body.Username == "admin" {
-		role = "admin"
-	}
+// 	role := "user"
+// 	if body.Username == "admin" {
+// 		role = "admin"
+// 	}
 
-	token, err := GenerateToken(body.Username, role)
-	if err != nil {
-		http.Error(w, "could not generate token", http.StatusInternalServerError)
-		return
-	}
+// 	token, err := GenerateToken(body.Username, role)
+// 	if err != nil {
+// 		http.Error(w, "could not generate token", http.StatusInternalServerError)
+// 		return
+// 	}
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"token": token,
-	})
+// 	json.NewEncoder(w).Encode(map[string]string{
+// 		"token": token,
+// 	})
 
-}
+// }

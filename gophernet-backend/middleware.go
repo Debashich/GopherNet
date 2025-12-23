@@ -3,40 +3,38 @@ package main
 import (
 	"net/http"
 	"strings"
-
 )
 
-func AuthMiddleware(requiredRoles ...string) func(http.Handler) http.Handler {
-	return func (next http.Handler) http.Handler {
+func AuthMiddleware(allowedRoles ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				http.Error(w, "missing authorization header", http.StatusUnauthorized)
 				return
 			}
 
-			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-			claims, err := ParseToken(tokenStr)
+			parts := strings.Split(authHeader, " ")
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				http.Error(w, "invalid authorization header", http.StatusUnauthorized)
+				return
+			}
+
+			claims, err := ParseToken(parts[1])
 			if err != nil {
 				http.Error(w, "invalid token", http.StatusUnauthorized)
 				return
 			}
 
-			allowed := false
-			for _, role := range requiredRoles {
-				if claims.Role == role {
-					allowed = true
-					break
+			for _, allowed := range allowedRoles {
+				if claims.Role == allowed {
+					next.ServeHTTP(w, r)
+					return
 				}
 			}
 
-			if !allowed {
-				http.Error(w, "forbidden", http.StatusForbidden)
-				return
-			}
-
-			next.ServeHTTP(w, r)
+			http.Error(w, "forbidden", http.StatusForbidden)
 		})
-
 	}
 }
