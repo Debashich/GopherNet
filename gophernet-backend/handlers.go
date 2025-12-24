@@ -59,14 +59,14 @@ func PublishHandler(b *Broker) http.HandlerFunc {
 	}
 }
 
-//EVENTS HANDLER
+// //EVENTS HANDLER
 
-func EventsHandler(b *Broker) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(b.GetEvents())
-	}
-}
+// func EventsHandler(b *Broker) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		json.NewEncoder(w).Encode(b.GetEvents())
+// 	}
+// }
 
 //SUBSCRIPTIONS HANDLER
 

@@ -1,4 +1,13 @@
-package main
+package store
+
+import "time"
+
+type Event struct {
+	ID        int
+	Topic     string
+	Message   string
+	Timestamp time.Time
+}
 
 type Store interface {
 	Save(event Event) error
