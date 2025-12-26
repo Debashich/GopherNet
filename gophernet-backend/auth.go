@@ -1,116 +1,54 @@
 package main
 
-import(
+import (
 	"encoding/json"
-	"errors"
-	"time"
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
+	"os"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 var demoUsers = map[string]struct {
 	Password string
 	Role     string
 }{
-	"admin":{
-		Password: "admin123",
-		Role: "admin",
-	},
-	"user":{
-		Password: "user123",
-		Role: "user",
-	},
+	"admin": {"admin123", "admin"}, //DEMO
+	"user":  {"user123", "user"},	//DEMO
 }
 
-
-
-
-var jwtSecret = []byte("gophernet-secret")
-
-type Claims struct{
+type Claims struct {
 	Username string `json:"username"`
-	Role string `json:"role"`
+	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(username, role string) (string, error){
-	claims := Claims{
-		Username: username,
-		Role: role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
-}
-
-
-func ParseToken(tokenStr string) (*Claims, error){
-	token, err := jwt.ParseWithClaims(
-		tokenStr,
-		&Claims{},
-		func(token *jwt.Token) (interface{}, error){
-			return jwtSecret, nil
-		},
-	)
-
-	if err != nil || !token.Valid {
-		return nil, errors.New("invalid token")
-	}
-
-	claims, ok := token.Claims.(*Claims)
-	if !ok {
-		return nil, errors.New("invalid token claims")
-	}
-
-	return claims, nil
-}
-
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-
-	if r.Method == http.MethodOptions {
-        w.WriteHeader(http.StatusOK)
-        return
-    }
-	
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var creds struct {
+	var c struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
+	json.NewDecoder(r.Body).Decode(&c)
 
-	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+	u, ok := demoUsers[c.Username]
+	if !ok || u.Password != c.Password {
+		http.Error(w, "invalid credentials", 401)
 		return
 	}
 
-	user, ok := demoUsers[creds.Username]
-	if !ok || user.Password != creds.Password {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
-		return
-	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+		Username: c.Username,
+		Role:     u.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	})
 
-	token, err := GenerateToken(creds.Username, user.Role)
-	if err != nil {
-		http.Error(w, "failed to generate token", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
+	t, _ := token.SignedString(jwtSecret)
 	json.NewEncoder(w).Encode(map[string]string{
-		"token": token,
-		"role":  user.Role,
+		"token": t,
+		"role":  u.Role,
 	})
 }
