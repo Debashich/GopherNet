@@ -12,28 +12,52 @@ interface Event {
 }
 
 export default function Home() {
-  const [role, setRole] = useState<string | null>(getRole());
+  const [role] = useState<string | null>(getRole());
   const [events, setEvents] = useState<Event[]>([]);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    setEvents([
-      { topic: "System", message: "Broker service healthy and operational", timestamp: new Date() },
-      // { topic: "Performance", message: "Latency reduced by 18%", timestamp: new Date() },
-      { topic: "Database", message: "Event persisted successfully", timestamp: new Date() },
-      { topic: "System", message: "New subscriber connected", timestamp: new Date() },
-    ]);
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
+
+    // 1. Load recent events via REST
+    fetch(`${API_URL}/events?topic=System`)
+      .then(res => res.json())
+      .then(data => {
+        setEvents(data.map((e: any) => ({
+          topic: e.topic,
+          message: e.message,
+          timestamp: new Date(e.timestamp)
+        })));
+      })
+      .catch(console.error);
+
+    // 2. Connect WebSocket for live updates
+    const ws = new WebSocket(`${WS_URL}/subscribe?topic=System`);
+
+    ws.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
+      setEvents((prev) => [
+        {
+          topic: data.topic,
+          message: data.message,
+          timestamp: new Date(data.timestamp),
+        },
+        ...prev,
+      ]);
+    };
+
+    ws.onerror = (e) => console.error("WebSocket error", e);
+    ws.onclose = () => console.log("WebSocket closed");
 
     const onScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
-  const grouped = events.reduce<Record<string, Event[]>>((acc, e) => {
-    acc[e.topic] = acc[e.topic] || [];
-    acc[e.topic].push(e);
-    return acc;
-  }, {});
+    return () => {
+      ws.close();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -42,10 +66,8 @@ export default function Home() {
       <main>
         <Hero event={events[0]} />
 
+        {/* SAME component, SAME layout */}
         <EventSection title="Live Events" events={events} />
-        {/* <EventSection title="System Events" events={grouped.System || []} />
-        <EventSection title="Database Events" events={grouped.Database || []} />
-        <EventSection title="Performance Events" events={grouped.Performance || []} /> */}
       </main>
 
       <Footer />

@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import { clearAuth } from "../auth";
 
 interface NavbarProps {
   scrolled: boolean;
@@ -7,6 +8,14 @@ interface NavbarProps {
 }
 
 export default function Navbar({ scrolled, role }: NavbarProps) {
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    clearAuth();
+    navigate("/");
+    window.location.reload(); // Refresh to update state
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all ${
@@ -27,12 +36,23 @@ export default function Navbar({ scrolled, role }: NavbarProps) {
               Role: {role}
             </span>
           )}
-          <Link 
-            to="/signin"
-            className="text-sm font-medium text-slate-600 hover:text-slate-900"
-          >
-            Sign In
-          </Link>
+          
+          {role ? (
+            <button
+              onClick={handleSignOut}
+              className="text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <Link
+              to="/signin"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              Sign In
+            </Link>
+          )}
+          
           <button className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-md hover:bg-slate-800">
             Get Started
           </button>
