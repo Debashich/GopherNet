@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"time"
 )
 
 type MySQLStore struct {
@@ -98,4 +99,35 @@ func (m *MySQLStore) ListAll() ([]Event, error) {
     }
 
     return events, nil
+}
+
+func (m *MySQLStore) ListUnpublishedBefore(t time.Time) ([]Event, error) {
+    rows, err := m.db.Query(
+        `SELECT id, topic, message, timestamp, scheduled_at, published 
+         FROM events 
+         WHERE published = FALSE AND scheduled_at <= ?`,
+        t,
+    )
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var events []Event
+    for rows.Next() {
+        var e Event
+        if err := rows.Scan(&e.ID, &e.Topic, &e.Message, &e.Timestamp, &e.ScheduledAt, &e.Published); err != nil {
+            return nil, err
+        }
+        events = append(events, e)
+    }
+    return events, nil
+}
+
+func (m *MySQLStore) MarkPublished(id int) error {
+    _, err := m.db.Exec(
+        `UPDATE events SET published = TRUE WHERE id = ?`,
+        id,
+    )
+    return err
 }
