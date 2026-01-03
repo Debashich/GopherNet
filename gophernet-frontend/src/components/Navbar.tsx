@@ -33,8 +33,19 @@ export default function Navbar({ scrolled, role }: NavbarProps) {
         <div className="flex items-center gap-4">
           {role && (
             <span className="text-sm font-medium text-slate-600">
-              Role: {role}
+              Role: <span className={role === 'admin' ? 'text-blue-600' : ''}>{role}</span>
             </span>
+          )}
+          
+          {/* Show Admin Panel link only for admin role */}
+          {role === 'admin' && (
+            <Link
+              to="/admin"
+              className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <span>⚙️</span>
+              Admin Panel
+            </Link>
           )}
           
           {role ? (
