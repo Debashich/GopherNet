@@ -7,6 +7,7 @@ import (
     "net/http"
     "os"
     "os/signal"
+    
     "syscall"
     "time"
 
@@ -20,7 +21,6 @@ func main() {
     memStore := store.NewMemoryStore()
     broker := NewBroker(memStore)
 
-    // Scheduler loop (use broker.store for flexibility)
     go func() {
         for {
             events, err := broker.store.ListUnpublishedBefore(time.Now())
@@ -37,13 +37,27 @@ func main() {
     mux.HandleFunc("/health", HealthHandler)
     mux.HandleFunc("/info", InfoHandler)
     mux.HandleFunc("/login", LoginHandler)
-    mux.Handle(
-        "/publish",
-        AuthMiddleware("admin")(PublishHandler(broker)),
-    )
+    mux.Handle("/publish", AuthMiddleware("admin")(PublishHandler(broker)))
     mux.HandleFunc("/subscribe", SubscribeHandler(broker))
-    mux.HandleFunc("/events", EventsHandler(broker))
-    mux.Handle("/delete", AuthMiddleware("admin")(DeleteEventHandler(broker)))
+
+    mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
+        log.Printf("Request: %s %s", r.Method, r.URL.Path)
+        if r.Method == "GET" {
+            EventsHandler(broker).ServeHTTP(w, r)
+        } else {
+            http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        }
+    })
+
+    mux.HandleFunc("/events/", func(w http.ResponseWriter, r *http.Request) {
+        log.Printf("Request: %s %s", r.Method, r.URL.Path)
+        
+        if r.Method == "DELETE" {
+            AuthMiddleware("admin")(DeleteEventHandler(broker)).ServeHTTP(w, r)
+        } else {
+            http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        }
+    })
 
     handler := CORSMiddleware(mux)
 

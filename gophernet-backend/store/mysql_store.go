@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"time"
+	"fmt"
 )
 
 type MySQLStore struct {
@@ -130,4 +131,22 @@ func (m *MySQLStore) MarkPublished(id int) error {
         id,
     )
     return err
+}
+
+func (m *MySQLStore) DeleteByID(id int) error {
+    result, err := m.db.Exec("DELETE FROM events WHERE id = ?", id)
+    if err != nil {
+        return err
+    }
+    
+    rows, err := result.RowsAffected()
+    if err != nil {
+        return err
+    }
+    
+    if rows == 0 {
+        return fmt.Errorf("event with ID %d not found", id)
+    }
+    
+    return nil
 }

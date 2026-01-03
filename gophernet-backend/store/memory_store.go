@@ -1,66 +1,118 @@
 package store
 
 import (
-	"fmt"
-	"sync"
-	"time"
+    "fmt"
+    "sync"
+    "time"
 )
 
 type MemoryStore struct {
+    mu     sync.RWMutex
     events []Event
-    mu     sync.Mutex
+    nextID int
 }
 
 func NewMemoryStore() *MemoryStore {
-    return &MemoryStore{events: []Event{}}
+    return &MemoryStore{
+        events: []Event{},
+        nextID: 1,
+    }
 }
 
 func (m *MemoryStore) Save(e Event) error {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+
+    if e.ID == 0 {
+        e.ID = m.nextID
+        m.nextID++
+    }
+
     m.events = append(m.events, e)
     return nil
 }
 
-func (m *MemoryStore) ListByTopic(topic string) ([]Event, error) {
-    return m.events, nil
-}
-
-func (m *MemoryStore) ListAfter(topic string, lastID int) ([]Event, error) {
-    return m.events, nil
-}
-
 func (m *MemoryStore) ListAll() ([]Event, error) {
+    m.mu.RLock()
+    defer m.mu.RUnlock()
+
     return m.events, nil
+}
+
+func (m *MemoryStore) ListByTopic(topic string) ([]Event, error) {
+    m.mu.RLock()
+    defer m.mu.RUnlock()
+
+    var result []Event
+    for _, e := range m.events {
+        if e.Topic == topic {
+            result = append(result, e)
+        }
+    }
+    return result, nil
+}
+
+func (m *MemoryStore) ListAfter(topic string, afterID int) ([]Event, error) {
+    m.mu.RLock()
+    defer m.mu.RUnlock()
+
+    var result []Event
+    for _, e := range m.events {
+        if (topic == "" || e.Topic == topic) && e.ID > afterID {
+            result = append(result, e)
+        }
+    }
+    return result, nil
 }
 
 func (m *MemoryStore) ListUnpublishedBefore(t time.Time) ([]Event, error) {
-    var out []Event
+    m.mu.RLock()
+    defer m.mu.RUnlock()
+
+    var result []Event
     for _, e := range m.events {
-        if !e.Published && !e.ScheduledAt.After(t) {
-            out = append(out, e)
+        if !e.Published && !e.ScheduledAt.IsZero() && e.ScheduledAt.Before(t) {
+            result = append(result, e)
         }
     }
-    return out, nil
+    return result, nil
 }
 
 func (m *MemoryStore) MarkPublished(id int) error {
-    for i, e := range m.events {
-        if e.ID == id {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+
+    for i := range m.events {
+        if m.events[i].ID == id {
             m.events[i].Published = true
             return nil
         }
     }
-    return nil
+    return fmt.Errorf("event not found")
 }
 
 func (m *MemoryStore) Delete(topic, message string, scheduledAt time.Time) error {
     m.mu.Lock()
     defer m.mu.Unlock()
+
     for i, e := range m.events {
         if e.Topic == topic && e.Message == message && e.ScheduledAt.Equal(scheduledAt) {
-            // Remove the event from the slice
             m.events = append(m.events[:i], m.events[i+1:]...)
             return nil
         }
     }
     return fmt.Errorf("event not found")
+}
+
+func (m *MemoryStore) DeleteByID(id int) error {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    
+    for i, e := range m.events {
+        if e.ID == id {
+            m.events = append(m.events[:i], m.events[i+1:]...)
+            return nil
+        }
+    }
+    return fmt.Errorf("event with ID %d not found", id)
 }
