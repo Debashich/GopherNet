@@ -25,8 +25,10 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+          
+          <Route index element={<EventManager />} />
           <Route path="events" element={<EventManager />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<UserManager />} />
           <Route path="scheduled" element={<ScheduledEvents />} />
         </Route>
