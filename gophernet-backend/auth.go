@@ -26,29 +26,39 @@ type Claims struct {
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var c struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-	json.NewDecoder(r.Body).Decode(&c)
+    var c struct {
+        Username string `json:"username"`
+        Password string `json:"password"`
+    }
+    json.NewDecoder(r.Body).Decode(&c)
 
-	u, ok := demoUsers[c.Username]
-	if !ok || u.Password != c.Password {
-		http.Error(w, "invalid credentials", 401)
-		return
-	}
+    u, ok := demoUsers[c.Username]
+    if !ok || u.Password != c.Password {
+        http.Error(w, "invalid credentials", 401)
+        return
+    }
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
-		Username: c.Username,
-		Role:     u.Role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-		},
-	})
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+        Username: c.Username,
+        Role:     u.Role,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+        },
+    })
 
-	t, _ := token.SignedString(jwtSecret)
-	json.NewEncoder(w).Encode(map[string]string{
-		"token": t,
-		"role":  u.Role,
-	})
+    t, _ := token.SignedString(jwtSecret)
+    
+    redirect := "/"
+    if u.Role == "admin" {
+        redirect = "/admin"
+    }
+    
+    json.NewEncoder(w).Encode(map[string]string{
+        "token":    t,
+        "role":     u.Role,
+        "redirect": redirect, 
+    })
 }
+
+
+
