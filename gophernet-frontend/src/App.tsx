@@ -15,17 +15,16 @@ export default function App() {
         {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/signin" element={<SignIn />} />
-        
+
         {/* Admin routes - protected */}
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin={true}>
               <AdminLayout />
             </ProtectedRoute>
           }
         >
-          
           <Route index element={<EventManager />} />
           <Route path="events" element={<EventManager />} />
           <Route path="dashboard" element={<Dashboard />} />

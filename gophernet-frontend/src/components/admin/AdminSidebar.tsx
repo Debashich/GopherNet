@@ -14,6 +14,12 @@ export default function AdminSidebar() {
         : "text-gray-700 hover:bg-gray-50"
     }`;
   };
+  
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    window.location.href = "/";  // <-- CHANGE THIS (was "/signin")
+  };
 
   return (
     <aside className="w-64 bg-white shadow-md min-h-screen">
@@ -54,10 +60,7 @@ export default function AdminSidebar() {
       
       <div className="absolute bottom-0 w-64 p-6 border-t">
         <button
-          onClick={() => {
-            localStorage.removeItem("token");
-            window.location.href = "/signin";
-          }}
+          onClick={handleLogout}  // <-- USE FUNCTION
           className="w-full px-4 py-2 text-red-600 border border-red-600 rounded hover:bg-red-50 transition-colors"
         >
           Logout

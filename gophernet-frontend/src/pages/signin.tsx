@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
-
 export default function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +27,9 @@ export default function SignIn() {
     const data = await res.json();
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", data.role);
-    navigate("/");
+
+    // Use redirect from backend
+    navigate(data.redirect);
   }
 
   return (

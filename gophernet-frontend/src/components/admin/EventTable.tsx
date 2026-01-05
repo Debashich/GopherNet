@@ -1,107 +1,72 @@
 import Icon from "../../icons/Icon";
 
-interface AdminEvent {
+interface Event {
   id: string;
   topic: string;
   message: string;
   scheduled_at: string;
-  status: string;
 }
 
 interface EventTableProps {
-  events: AdminEvent[];
-  onEdit: (event: AdminEvent) => void;
+  events: Event[];
+  onEdit: (event: Event) => void;
   onDelete: (id: string) => void;
 }
 
 export default function EventTable({ events, onEdit, onDelete }: EventTableProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("en-IN", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  };
-
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-[#1e293b] rounded-lg shadow-xl overflow-hidden border border-[#334155]">
-      <table className="min-w-full divide-y divide-[#334155]">
-        <thead className="bg-[#0f172a]">
+    <table className="w-full">
+      <thead className="bg-slate-900/50 sticky top-0">
+        <tr>
+          <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300 uppercase tracking-wider">Topic</th>
+          <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300 uppercase tracking-wider">Message</th>
+          <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300 uppercase tracking-wider">Scheduled At</th>
+          <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-700">
+        {events.length === 0 ? (
           <tr>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Topic
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Message
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Scheduled At
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Status
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Actions
-            </th>
+            <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+              No events found
+            </td>
           </tr>
-        </thead>
-        <tbody className="divide-y divide-[#334155]">
-          {events.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-6 py-12 text-center">
-                <div className="flex flex-col items-center">
-                  <Icon name="empty" className="w-16 h-16 text-gray-600 mb-4" />
-                  <p className="text-gray-400 text-lg">No events yet. Create your first event!</p>
-                </div>
+        ) : (
+          events.map((event) => (
+            <tr key={event.id} className="hover:bg-slate-800/50 transition-colors">
+              <td className="px-6 py-4 text-white font-medium">{event.topic}</td>
+              <td className="px-6 py-4 text-white">{event.message}</td>
+              <td className="px-6 py-4 text-white">
+                {new Date(event.scheduled_at).toLocaleString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </td>
-            </tr>
-          ) : (
-            events.map((event) => (
-              <tr key={event.id} className="hover:bg-[#334155]/30 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm font-semibold text-teal-400">
-                    {event.topic}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="text-sm text-gray-300 line-clamp-2">
-                    {event.message}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                  {formatDate(event.scheduled_at)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                    event.status === 'published' 
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                      : event.status === 'cancelled'
-                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                  }`}>
-                    {event.status || 'pending'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => onEdit(event)}
-                    className="inline-flex items-center gap-1 text-teal-400 hover:text-teal-300 mr-4 font-semibold"
+                    className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
                   >
                     <Icon name="edit" className="w-4 h-4" />
-                    <span>Edit</span>
+                    <span className="text-sm font-medium">Edit</span>
                   </button>
                   <button
                     onClick={() => onDelete(event.id)}
-                    className="inline-flex items-center gap-1 text-red-400 hover:text-red-300 font-semibold"
+                    className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors"
                   >
                     <Icon name="trash" className="w-4 h-4" />
-                    <span>Delete</span>
+                    <span className="text-sm font-medium">Delete</span>
                   </button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+                </div>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
   );
 }

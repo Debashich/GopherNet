@@ -1,48 +1,27 @@
 import { Navigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: string; // Optional: specify required role
-}
-
-interface DecodedToken {
-  username: string;
-  role: string;
-  exp: number;
+  children: ReactNode;
+  requireAdmin?: boolean;  // <-- ADD THIS
 }
 
 export default function ProtectedRoute({ 
   children, 
-  requiredRole = "admin" 
+  requireAdmin = false 
 }: ProtectedRouteProps) {
   const token = localStorage.getItem("token");
-  
-  // No token - redirect to signin
+  const role = localStorage.getItem("role");
+
+  // Not logged in at all
   if (!token) {
-    return <Navigate to="/signin" replace />;
+    return <Navigate to="/signin" />;
   }
 
-  try {
-    // Decode and verify token
-    const decoded = jwtDecode<DecodedToken>(token);
-    
-    // Check if token expired
-    const currentTime = Date.now() / 1000;
-    if (decoded.exp < currentTime) {
-      localStorage.removeItem("token");
-      return <Navigate to="/signin" replace />;
-    }
-
-    // Check role if required
-    if (requiredRole && decoded.role !== requiredRole) {
-      return <Navigate to="/" replace />;
-    }
-
-    return <>{children}</>;
-  } catch (error) {
-    // Invalid token - clear and redirect
-    localStorage.removeItem("token");
-    return <Navigate to="/signin" replace />;
+  // Logged in but trying to access admin routes without admin role
+  if (requireAdmin && role !== "admin") {
+    return <Navigate to="/" />;
   }
+
+  return <>{children}</>;
 }
